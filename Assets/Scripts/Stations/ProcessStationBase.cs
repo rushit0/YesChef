@@ -38,20 +38,15 @@ namespace YesChef.Stations
             CancelProcessing();
         }
 
-        public virtual bool CanInteract(GameObject interactor)
-        {
-            return interactor != null;
-        }
-
         public virtual void Interact(GameObject interactor)
         {
-            if (!CanInteract(interactor))
+            if (interactor == null)
             {
                 return;
             }
 
-            Player.PlayerInteractor playerInteractor = interactor.GetComponent<Player.PlayerInteractor>();
-            if (playerInteractor == null || !playerInteractor.TryGetHeldItem(out IHoldable holdable))
+            Player.PlayerInteractionController interactionController = interactor.GetComponent<Player.PlayerInteractionController>();
+            if (interactionController == null || !interactionController.TryGetHeldItem(out IHoldable holdable))
             {
                 return;
             }
@@ -61,7 +56,7 @@ namespace YesChef.Stations
                 return;
             }
 
-            playerInteractor.ReleaseHeldItem(OutputAnchor.position);
+            interactionController.ReleaseHeldItem(OutputAnchor.position);
             BeginProcessing(holdable);
         }
 
