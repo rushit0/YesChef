@@ -13,11 +13,15 @@ namespace YesChef.Core
     public sealed class GameManager : MonoSingleton<GameManager>
     {
         [Header("Bootstrap References")]
-        [SerializeField] private GameStateManager gameStateManager;
+        [SerializeField] private GameFlowManager gameFlowManager;
+        [SerializeField] private GameTimer gameTimer;
         [SerializeField] private OrderManager orderManager;
+        [SerializeField] private ScoreManager scoreManager;
 
-        public GameStateManager GameStateManager => gameStateManager;
+        public GameFlowManager GameFlowManager => gameFlowManager;
+        public GameTimer GameTimer => gameTimer;
         public OrderManager OrderManager => orderManager;
+        public ScoreManager ScoreManager => scoreManager;
 
         public event Action Bootstrapped;
 
@@ -30,23 +34,18 @@ namespace YesChef.Core
                 return;
             }
 
-            DontDestroyOnLoad(gameObject);
-
             BootstrapManagers();
             Bootstrapped?.Invoke();
         }
 
-        private void Start()
-        {
-            gameStateManager.SetState(GameStateManager.GameState.Playing);
-        }
-
         private void BootstrapManagers()
         {
-            gameStateManager = ResolveManager(gameStateManager, "Game State Manager");
+            gameFlowManager = ResolveManager(gameFlowManager, "Game Flow Manager");
+            gameTimer = ResolveManager(gameTimer, "Game Timer");
             orderManager = ResolveManager(orderManager, "Order Manager");
+            scoreManager = ResolveManager(scoreManager, "Score Manager");
 
-            orderManager.Initialize();
+            gameTimer.ResetTimer();
         }
 
         private T ResolveManager<T>(T currentReference, string objectName) where T : Component

@@ -1,127 +1,187 @@
+using System.Collections.Generic;
 using UnityEngine;
 using YesChef.Core.Interfaces;
+using YesChef.UI;
 
 namespace YesChef.Player
 {
     /// <summary>
-    /// Finds the closest interactable in range and invokes it when the interact key is pressed.
-    /// Interaction selection is proximity-based, which is a good fit for top-down kitchen gameplay.
+    /// Detects nearby contextual-action sources and drives the shared popup UI.
+    /// This replaces keyboard-driven interaction with proximity-based clickable actions.
     /// </summary>
-    [RequireComponent(typeof(PlayerInputReader))]
+    [RequireComponent(typeof(PlayerCarryController))]
     public sealed class PlayerInteractionController : MonoBehaviour
     {
-        [SerializeField] private Transform holdPoint;
-        [SerializeField, Min(0.1f)] private float interactionRadius = 1.5f;
-        [SerializeField] private LayerMask interactionLayers = ~0;
+        [SerializeField] private ContextPopupUI contextPopupUI;
 
-        private readonly Collider[] overlapResults = new Collider[16];
+        private readonly Dictionary<IContextActionSource, int> nearbySources = new();
+        private readonly List<ContextActionData> actionsBuffer = new();
 
-        private PlayerInputReader inputReader;
-        private IHoldable heldItem;
+        private PlayerCarryController playerCarryController;
+        private IContextActionSource currentSource;
 
         private void Awake()
         {
-            inputReader = GetComponent<PlayerInputReader>();
+            playerCarryController = GetComponent<PlayerCarryController>();
+
+            if (contextPopupUI == null)
+            {
+                contextPopupUI = FindAnyObjectByType<ContextPopupUI>();
+            }
         }
 
-        private void Update() {
-            if (!inputReader.InteractPressedThisFrame) {
+        private void Update()
+        {
+            IContextActionSource nearestSource = FindNearestSource();
+            if (!ReferenceEquals(currentSource, nearestSource))
+            {
+                SetCurrentSource(nearestSource);
+            }
+
+            RefreshPopup();
+        }
+
+        private void OnEnable()
+        {
+            if (playerCarryController != null)
+            {
+                playerCarryController.CarriedItemChanged += HandleCarriedItemChanged;
+            }
+        }
+
+        private void OnDisable()
+        {
+            if (playerCarryController != null)
+            {
+                playerCarryController.CarriedItemChanged -= HandleCarriedItemChanged;
+            }
+
+            SetCurrentSource(null);
+            nearbySources.Clear();
+            contextPopupUI?.Hide();
+        }
+
+        private void OnTriggerEnter(Collider other)
+        {
+            IContextActionSource source = FindContextActionSource(other);
+            if (source == null)
+            {
                 return;
             }
 
-            IInteractable nearestInteractable = FindNearestInteractable();
-            nearestInteractable?.Interact(gameObject);
+            nearbySources.TryGetValue(source, out int count);
+            nearbySources[source] = count + 1;
+            RefreshPopup();
         }
 
-        public bool TryGetHeldItem(out IHoldable holdable)
+        private void OnTriggerExit(Collider other)
         {
-            holdable = heldItem;
-            return holdable != null;
-        }
-
-        public bool TryPickup(IHoldable holdable)
-        {
-            if (holdable == null || heldItem != null || holdPoint == null)
-            {
-                return false;
-            }
-
-            heldItem = holdable;
-            heldItem.OnPickedUp(holdPoint);
-            return true;
-        }
-
-        public void ReleaseHeldItem(Vector3 worldPosition)
-        {
-            if (heldItem == null)
+            IContextActionSource source = FindContextActionSource(other);
+            if (source == null || !nearbySources.TryGetValue(source, out int count))
             {
                 return;
             }
 
-            heldItem.OnDropped(worldPosition);
-            heldItem = null;
+            if (count <= 1)
+            {
+                nearbySources.Remove(source);
+            }
+            else
+            {
+                nearbySources[source] = count - 1;
+            }
+
+            if (ReferenceEquals(currentSource, source) && !nearbySources.ContainsKey(source))
+            {
+                SetCurrentSource(FindNearestSource());
+            }
+
+            RefreshPopup();
         }
 
-        private IInteractable FindNearestInteractable()
+        private void HandleCarriedItemChanged(Ingredients.IngredientInstance _)
         {
-            int hitCount = Physics.OverlapSphereNonAlloc(
-                transform.position,
-                interactionRadius,
-                overlapResults,
-                interactionLayers,
-                QueryTriggerInteraction.Collide);
+            RefreshPopup();
+        }
 
-            IInteractable nearestInteractable = null;
+        private IContextActionSource FindNearestSource()
+        {
+            IContextActionSource nearestSource = null;
             float nearestDistanceSqr = float.MaxValue;
 
-            for (int index = 0; index < hitCount; index++)
+            foreach (IContextActionSource source in nearbySources.Keys)
             {
-                Collider hitCollider = overlapResults[index];
-                if (hitCollider == null)
+                if (source == null)
                 {
                     continue;
                 }
 
-                IInteractable interactable = FindInteractable(hitCollider);
-                if (interactable == null)
-                {
-                    continue;
-                }
-
-                Vector3 offset = hitCollider.ClosestPoint(transform.position) - transform.position;
-                float distanceSqr = offset.sqrMagnitude;
+                Vector3 anchorPosition = source.PopupAnchor != null ? source.PopupAnchor.position : transform.position;
+                float distanceSqr = (anchorPosition - transform.position).sqrMagnitude;
                 if (distanceSqr >= nearestDistanceSqr)
                 {
                     continue;
                 }
 
                 nearestDistanceSqr = distanceSqr;
-                nearestInteractable = interactable;
+                nearestSource = source;
             }
 
-            return nearestInteractable;
+            return nearestSource;
         }
 
-        private static IInteractable FindInteractable(Collider sourceCollider)
+        private void SetCurrentSource(IContextActionSource newSource)
+        {
+            if (currentSource != null)
+            {
+                currentSource.ContextActionsChanged -= HandleSourceActionsChanged;
+            }
+
+            currentSource = newSource;
+
+            if (currentSource != null)
+            {
+                currentSource.ContextActionsChanged += HandleSourceActionsChanged;
+            }
+        }
+
+        private void HandleSourceActionsChanged()
+        {
+            RefreshPopup();
+        }
+
+        private void RefreshPopup()
+        {
+            if (contextPopupUI == null || currentSource == null || playerCarryController == null)
+            {
+                contextPopupUI?.Hide();
+                return;
+            }
+
+            actionsBuffer.Clear();
+            currentSource.GetContextActions(playerCarryController, actionsBuffer);
+
+            if (actionsBuffer.Count == 0)
+            {
+                contextPopupUI.Hide();
+                return;
+            }
+
+            contextPopupUI.Show(currentSource.PopupTitle, actionsBuffer, currentSource.PopupAnchor);
+        }
+
+        private static IContextActionSource FindContextActionSource(Collider sourceCollider)
         {
             MonoBehaviour[] behaviours = sourceCollider.GetComponentsInParent<MonoBehaviour>();
             foreach (MonoBehaviour behaviour in behaviours)
             {
-                if (behaviour is IInteractable interactable)
+                if (behaviour is IContextActionSource contextActionSource)
                 {
-                    return interactable;
+                    return contextActionSource;
                 }
             }
 
             return null;
         }
-
-#if UNITY_EDITOR
-        private void OnDrawGizmosSelected()
-        {
-            Gizmos.color = new Color(1f, 0.65f, 1f, 1f);
-            Gizmos.DrawWireSphere(transform.position, interactionRadius);
-        }
-#endif
     }
 }

@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0d448f337dae4f74845046429b5f6d50, type: 3}
+  m_Name: Meat
+  m_EditorClassIdentifier: Assembly-CSharp::YesChef.Ingredients.IngredientData
+  ingredientName: Meat
+  type: 2
+  icon: {fileID: 21300000, guid: e7e2d84ef5548f344ab9db6a35475ddf, type: 3}
+  scoreValue: 30
+  requiresProcessing: 1
+  rawPrefab: {fileID: 6527755756170589201, guid: 91f85cea10f192046a6c325b6f527aec, type: 3}
+  preparedPrefab: {fileID: 9046947506982003945, guid: 1989792960d2e8a4caa62caafbf59397, type: 3}

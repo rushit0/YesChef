@@ -1,39 +1,44 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-namespace YesChef.Player {
-    public sealed class PlayerInputReader : MonoBehaviour {
+namespace YesChef.Player
+{
+    /// <summary>
+    /// Reads movement input for the chef.
+    /// Interaction is now proximity-popup driven, so no gameplay action key is exposed here.
+    /// </summary>
+    public sealed class PlayerInputReader : MonoBehaviour
+    {
         public Vector2 MoveInput { get; private set; }
-        public bool InteractPressedThisFrame { get; private set; }
+        public bool PausePressedThisFrame { get; private set; }
+
         private InputSystem_Actions controls;
 
-        private void Awake() {
+        private void Awake()
+        {
             controls = new InputSystem_Actions();
         }
 
-        private void OnEnable() {
+        private void OnEnable()
+        {
             controls.Player.Enable();
-            controls.Player.Interact.performed += OnInteractPerformed;
+            controls.UI.Enable();
         }
 
-        private void OnDisable() {
-            controls.Player.Interact.performed -= OnInteractPerformed;
+        private void OnDisable()
+        {
             controls.Player.Disable();
+            controls.UI.Disable();
         }
 
-        private void Update() {
+        private void Update()
+        {
             MoveInput = controls.Player.Move.ReadValue<Vector2>();
+            PausePressedThisFrame = controls.UI.Cancel.WasPressedThisFrame();
         }
 
-        private void LateUpdate() {
-            InteractPressedThisFrame = false;
-        }
-
-        private void OnInteractPerformed(InputAction.CallbackContext context) {
-            InteractPressedThisFrame = true;
-        }
-
-        private void OnDestroy() {
+        private void OnDestroy()
+        {
             controls.Dispose();
         }
     }
