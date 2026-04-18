@@ -33,6 +33,7 @@ namespace YesChef.Managers
         private void Awake()
         {
             ResolveDependencies();
+            Time.timeScale = 1f;
         }
 
         private void OnEnable()
@@ -102,7 +103,7 @@ namespace YesChef.Managers
             SetState(GameState.GameOver);
 
             int finalScore = scoreManager != null ? scoreManager.CurrentScore : 0;
-            bool newHighScore = scoreManager != null && finalScore >= scoreManager.HighScore && finalScore > 0;
+            bool newHighScore = scoreManager != null && scoreManager.HasBeatenHighScoreThisRun;
             GameEnded?.Invoke(finalScore, newHighScore);
         }
 

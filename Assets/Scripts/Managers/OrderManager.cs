@@ -14,7 +14,6 @@ namespace YesChef.Managers
         [SerializeField] private CustomerWindow[] customerWindows = new CustomerWindow[4];
 
         private readonly List<OrderData> activeOrders = new();
-        private bool initialized;
 
         public IReadOnlyList<OrderData> ActiveOrders => activeOrders;
 
@@ -88,8 +87,6 @@ namespace YesChef.Managers
             {
                 AssignNewOrder(customerWindow);
             }
-
-            initialized = true;
         }
 
         private void HandleRespawnRequested(CustomerWindow customerWindow)

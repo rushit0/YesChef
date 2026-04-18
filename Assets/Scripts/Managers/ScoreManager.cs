@@ -10,20 +10,26 @@ namespace YesChef.Managers
     {
         private const string HighScoreKey = "YesChef.HighScore";
 
+        private int startingHighScore;
+
         public int CurrentScore { get; private set; }
         public int HighScore { get; private set; }
+        public bool HasBeatenHighScoreThisRun { get; private set; }
 
         public event Action<int, int> ScoreChanged;
 
         private void Awake()
         {
             HighScore = PlayerPrefs.GetInt(HighScoreKey, 0);
+            startingHighScore = HighScore;
             NotifyScoreChanged();
         }
 
         public void ResetCurrentScore()
         {
             CurrentScore = 0;
+            startingHighScore = HighScore;
+            HasBeatenHighScoreThisRun = false;
             NotifyScoreChanged();
         }
 
@@ -34,6 +40,7 @@ namespace YesChef.Managers
             if (CurrentScore > HighScore)
             {
                 HighScore = CurrentScore;
+                HasBeatenHighScoreThisRun = HighScore > startingHighScore;
                 PlayerPrefs.SetInt(HighScoreKey, HighScore);
                 PlayerPrefs.Save();
             }
