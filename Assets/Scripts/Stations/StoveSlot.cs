@@ -1,15 +1,13 @@
 using UnityEngine;
 using YesChef.Ingredients;
 
-namespace YesChef.Stations
-{
+namespace YesChef.Stations {
     /// <summary>
     /// Runtime slot state for the stove.
     /// Each slot cooks one ingredient independently.
     /// </summary>
     [System.Serializable]
-    public sealed class StoveSlot
-    {
+    public sealed class StoveSlot {
         private float totalCookTime;
 
         public IngredientInstance Item { get; private set; }
@@ -21,30 +19,25 @@ namespace YesChef.Stations
             ? 0f
             : Mathf.Clamp01(1f - (RemainingCookTime / totalCookTime));
 
-        public bool IsEmpty()
-        {
+        public bool IsEmpty() {
             return Item == null;
         }
 
-        public void Assign(IngredientInstance item, float cookTimeSeconds)
-        {
+        public void Assign(IngredientInstance item, float cookTimeSeconds) {
             Item = item;
             totalCookTime = cookTimeSeconds;
             RemainingCookTime = cookTimeSeconds;
         }
 
-        public void Tick(float deltaTime)
-        {
-            if (!IsCooking)
-            {
+        public void Tick(float deltaTime) {
+            if (!IsCooking) {
                 return;
             }
 
             RemainingCookTime = Mathf.Max(0f, RemainingCookTime - deltaTime);
         }
 
-        public IngredientInstance Remove()
-        {
+        public IngredientInstance Remove() {
             IngredientInstance item = Item;
             Item = null;
             RemainingCookTime = 0f;

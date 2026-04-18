@@ -2,28 +2,23 @@ using System;
 using UnityEngine;
 using YesChef.Ingredients;
 
-namespace YesChef.Player
-{
+namespace YesChef.Player {
     /// <summary>
     /// Owns the single ingredient the chef is currently carrying.
     /// This controller is deliberately small so inventory rules stay isolated from visuals and input.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class PlayerCarryController : MonoBehaviour
-    {
+    public sealed class PlayerCarryController : MonoBehaviour {
         private IngredientInstance carriedItem;
 
         public event Action<IngredientInstance> CarriedItemChanged;
 
-        public bool HasItem()
-        {
+        public bool HasItem() {
             return carriedItem != null;
         }
 
-        public bool TryPickup(IngredientInstance item)
-        {
-            if (item == null || carriedItem != null)
-            {
+        public bool TryPickup(IngredientInstance item) {
+            if (item == null || carriedItem != null) {
                 return false;
             }
 
@@ -32,10 +27,8 @@ namespace YesChef.Player
             return true;
         }
 
-        public IngredientInstance DropItem()
-        {
-            if (carriedItem == null)
-            {
+        public IngredientInstance DropItem() {
+            if (carriedItem == null) {
                 return null;
             }
 
@@ -45,8 +38,7 @@ namespace YesChef.Player
             return droppedItem;
         }
 
-        public IngredientInstance PeekItem()
-        {
+        public IngredientInstance PeekItem() {
             return carriedItem;
         }
     }

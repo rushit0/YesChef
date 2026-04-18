@@ -1,16 +1,13 @@
 using System;
 
-namespace YesChef.Ingredients
-{
+namespace YesChef.Ingredients {
     /// <summary>
     /// Plain runtime ingredient model carried by the player or owned by gameplay systems.
     /// It has no Unity scene dependency, which keeps business logic portable and easy to test.
     /// </summary>
     [Serializable]
-    public class IngredientInstance
-    {
-        public IngredientInstance(IngredientData data, IngredientProcessState initialState = IngredientProcessState.Raw)
-        {
+    public class IngredientInstance {
+        public IngredientInstance(IngredientData data, IngredientProcessState initialState = IngredientProcessState.Raw) {
             Data = data ?? throw new ArgumentNullException(nameof(data));
             State = initialState;
         }
@@ -20,10 +17,8 @@ namespace YesChef.Ingredients
 
         public event Action<IngredientProcessState> StateChanged;
 
-        public void SetState(IngredientProcessState newState)
-        {
-            if (State == newState)
-            {
+        public void SetState(IngredientProcessState newState) {
+            if (State == newState) {
                 return;
             }
 

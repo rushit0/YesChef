@@ -3,13 +3,11 @@ using System.Collections.Generic;
 using UnityEngine;
 using YesChef.Orders;
 
-namespace YesChef.Managers
-{
+namespace YesChef.Managers {
     /// <summary>
     /// Owns the active customer windows and keeps the kitchen supplied with runtime orders.
     /// </summary>
-    public sealed class OrderManager : MonoBehaviour
-    {
+    public sealed class OrderManager : MonoBehaviour {
         [SerializeField] private OrderGenerator orderGenerator;
         [SerializeField] private CustomerWindow[] customerWindows = new CustomerWindow[4];
 
@@ -19,8 +17,7 @@ namespace YesChef.Managers
 
         public event Action<IReadOnlyList<OrderData>> OrdersChanged;
 
-        public void Initialize(ScoreManager scoreManager)
-        {
+        public void Initialize(ScoreManager scoreManager) {
             ResolveDependencies();
             UnsubscribeFromWindows();
             SubscribeToWindows(scoreManager);
@@ -28,40 +25,31 @@ namespace YesChef.Managers
             RefreshActiveOrders();
         }
 
-        private void ResolveDependencies()
-        {
-            if (orderGenerator == null)
-            {
+        private void ResolveDependencies() {
+            if (orderGenerator == null) {
                 orderGenerator = GetComponentInChildren<OrderGenerator>(true);
             }
 
             bool hasAssignedWindows = false;
-            foreach (CustomerWindow customerWindow in customerWindows)
-            {
-                if (customerWindow != null)
-                {
+            foreach (CustomerWindow customerWindow in customerWindows) {
+                if (customerWindow != null) {
                     hasAssignedWindows = true;
                     break;
                 }
             }
 
-            if (!hasAssignedWindows)
-            {
+            if (!hasAssignedWindows) {
                 CustomerWindow[] discoveredWindows = FindObjectsByType<CustomerWindow>(FindObjectsInactive.Include, FindObjectsSortMode.None);
                 int windowCount = Mathf.Min(customerWindows.Length, discoveredWindows.Length);
-                for (int index = 0; index < windowCount; index++)
-                {
+                for (int index = 0; index < windowCount; index++) {
                     customerWindows[index] = discoveredWindows[index];
                 }
             }
         }
 
-        private void SubscribeToWindows(ScoreManager scoreManager)
-        {
-            foreach (CustomerWindow customerWindow in customerWindows)
-            {
-                if (customerWindow == null)
-                {
+        private void SubscribeToWindows(ScoreManager scoreManager) {
+            foreach (CustomerWindow customerWindow in customerWindows) {
+                if (customerWindow == null) {
                     continue;
                 }
 
@@ -70,53 +58,41 @@ namespace YesChef.Managers
             }
         }
 
-        private void UnsubscribeFromWindows()
-        {
-            foreach (CustomerWindow customerWindow in customerWindows)
-            {
-                if (customerWindow != null)
-                {
+        private void UnsubscribeFromWindows() {
+            foreach (CustomerWindow customerWindow in customerWindows) {
+                if (customerWindow != null) {
                     customerWindow.RespawnRequested -= HandleRespawnRequested;
                 }
             }
         }
 
-        private void ResetOrders()
-        {
-            foreach (CustomerWindow customerWindow in customerWindows)
-            {
+        private void ResetOrders() {
+            foreach (CustomerWindow customerWindow in customerWindows) {
                 AssignNewOrder(customerWindow);
             }
         }
 
-        private void HandleRespawnRequested(CustomerWindow customerWindow)
-        {
+        private void HandleRespawnRequested(CustomerWindow customerWindow) {
             AssignNewOrder(customerWindow);
             RefreshActiveOrders();
         }
 
-        private void AssignNewOrder(CustomerWindow customerWindow)
-        {
-            if (customerWindow == null || orderGenerator == null)
-            {
+        private void AssignNewOrder(CustomerWindow customerWindow) {
+            if (customerWindow == null || orderGenerator == null) {
                 return;
             }
 
             OrderData nextOrder = orderGenerator.GenerateRandomOrder();
-            if (nextOrder != null)
-            {
+            if (nextOrder != null) {
                 customerWindow.SetOrder(nextOrder);
             }
         }
 
-        private void RefreshActiveOrders()
-        {
+        private void RefreshActiveOrders() {
             activeOrders.Clear();
 
-            foreach (CustomerWindow customerWindow in customerWindows)
-            {
-                if (customerWindow?.CurrentOrder != null)
-                {
+            foreach (CustomerWindow customerWindow in customerWindows) {
+                if (customerWindow?.CurrentOrder != null) {
                     activeOrders.Add(customerWindow.CurrentOrder);
                 }
             }
@@ -124,8 +100,7 @@ namespace YesChef.Managers
             OrdersChanged?.Invoke(ActiveOrders);
         }
 
-        private void OnDisable()
-        {
+        private void OnDisable() {
             UnsubscribeFromWindows();
         }
     }
