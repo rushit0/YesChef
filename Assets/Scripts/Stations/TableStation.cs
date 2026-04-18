@@ -4,13 +4,11 @@ using YesChef.Ingredients;
 using YesChef.Player;
 using YesChef.UI;
 
-namespace YesChef.Stations
-{
+namespace YesChef.Stations {
     /// <summary>
     /// Prepares one vegetable at a time and exposes contextual place/pick actions.
     /// </summary>
-    public sealed class TableStation : BaseStationUIController
-    {
+    public sealed class TableStation : BaseStationUIController {
         private const float PrepareDurationSeconds = 2f;
 
         [SerializeField] private Transform itemAnchor;
@@ -24,17 +22,14 @@ namespace YesChef.Stations
         public override string PopupTitle => "Prep Table";
         public bool IsProcessing => preparedItem != null && remainingPrepareTime > 0f;
 
-        private void Update()
-        {
-            if (!IsProcessing)
-            {
+        private void Update() {
+            if (!IsProcessing) {
                 UpdateTimerUI();
                 return;
             }
 
             remainingPrepareTime = Mathf.Max(0f, remainingPrepareTime - Time.deltaTime);
-            if (remainingPrepareTime <= 0f && preparedItem != null)
-            {
+            if (remainingPrepareTime <= 0f && preparedItem != null) {
                 preparedItem.SetState(IngredientProcessState.Prepared);
                 RefreshVisual();
                 NotifyContextChanged();
@@ -43,45 +38,37 @@ namespace YesChef.Stations
             UpdateTimerUI();
         }
 
-        private void OnDisable()
-        {
+        private void OnDisable() {
             ClearVisual();
             UpdateTimerUI();
         }
 
-        public override void GetContextActions(PlayerCarryController playerCarryController, System.Collections.Generic.List<ContextActionData> actions)
-        {
-            if (preparedItem != null && !IsProcessing)
-            {
+        public override void GetContextActions(PlayerCarryController playerCarryController, System.Collections.Generic.List<ContextActionData> actions) {
+            if (preparedItem != null && !IsProcessing) {
                 bool canPickUp = playerCarryController != null && !playerCarryController.HasItem();
                 actions.Add(new ContextActionData("Pick Vegetable", canPickUp, () => PickPreparedVegetable(playerCarryController)));
                 return;
             }
 
-            if (preparedItem != null || playerCarryController == null)
-            {
+            if (preparedItem != null || playerCarryController == null) {
                 return;
             }
 
             IngredientInstance heldItem = PeekHeldItem(playerCarryController);
-            if (!IsIngredient(heldItem, IngredientType.Vegetable, IngredientProcessState.Raw))
-            {
+            if (!IsIngredient(heldItem, IngredientType.Vegetable, IngredientProcessState.Raw)) {
                 return;
             }
 
             actions.Add(new ContextActionData("Place Vegetable", true, () => StartPreparingVegetable(playerCarryController)));
         }
 
-        private void StartPreparingVegetable(PlayerCarryController playerCarryController)
-        {
-            if (preparedItem != null || playerCarryController == null)
-            {
+        private void StartPreparingVegetable(PlayerCarryController playerCarryController) {
+            if (preparedItem != null || playerCarryController == null) {
                 return;
             }
 
             IngredientInstance heldItem = PeekHeldItem(playerCarryController);
-            if (!IsIngredient(heldItem, IngredientType.Vegetable, IngredientProcessState.Raw))
-            {
+            if (!IsIngredient(heldItem, IngredientType.Vegetable, IngredientProcessState.Raw)) {
                 return;
             }
 
@@ -92,15 +79,12 @@ namespace YesChef.Stations
             NotifyContextChanged();
         }
 
-        private void PickPreparedVegetable(PlayerCarryController carryController)
-        {
-            if (preparedItem == null || IsProcessing || carryController == null || carryController.HasItem())
-            {
+        private void PickPreparedVegetable(PlayerCarryController carryController) {
+            if (preparedItem == null || IsProcessing || carryController == null || carryController.HasItem()) {
                 return;
             }
 
-            if (!TryGiveItem(carryController, preparedItem))
-            {
+            if (!TryGiveItem(carryController, preparedItem)) {
                 return;
             }
 
@@ -111,18 +95,15 @@ namespace YesChef.Stations
             NotifyContextChanged();
         }
 
-        private void RefreshVisual()
-        {
+        private void RefreshVisual() {
             GameObject targetPrefab = preparedItem?.Data?.GetPrefabForState(preparedItem.State);
-            if (targetPrefab == currentVisualPrefab && spawnedVisual != null)
-            {
+            if (targetPrefab == currentVisualPrefab && spawnedVisual != null) {
                 return;
             }
 
             ClearVisual();
 
-            if (targetPrefab == null)
-            {
+            if (targetPrefab == null) {
                 return;
             }
 
@@ -133,10 +114,8 @@ namespace YesChef.Stations
             currentVisualPrefab = targetPrefab;
         }
 
-        private void ClearVisual()
-        {
-            if (spawnedVisual != null)
-            {
+        private void ClearVisual() {
+            if (spawnedVisual != null) {
                 Destroy(spawnedVisual);
                 spawnedVisual = null;
             }
@@ -144,17 +123,14 @@ namespace YesChef.Stations
             currentVisualPrefab = null;
         }
 
-        private void UpdateTimerUI()
-        {
-            if (worldTimerUI == null)
-            {
+        private void UpdateTimerUI() {
+            if (worldTimerUI == null) {
                 return;
             }
 
             bool showTimer = IsProcessing;
             worldTimerUI.SetVisible(showTimer);
-            if (showTimer)
-            {
+            if (showTimer) {
                 worldTimerUI.SetTime(remainingPrepareTime);
             }
         }

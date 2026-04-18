@@ -1,15 +1,13 @@
 using UnityEngine;
 
-namespace YesChef.Player
-{
+namespace YesChef.Player {
     /// <summary>
     /// Moves the chef using a CharacterController and rotates toward travel direction.
     /// The controller depends only on input state, which keeps movement logic easy to test and extend.
     /// </summary>
     [RequireComponent(typeof(CharacterController))]
     [RequireComponent(typeof(PlayerInputReader))]
-    public sealed class PlayerMovementController : MonoBehaviour
-    {
+    public sealed class PlayerMovementController : MonoBehaviour {
         [SerializeField, Min(0f)] private float moveSpeed = 5f;
         [SerializeField, Min(0f)] private float movementSmoothing = 12f;
         [SerializeField, Min(0f)] private float rotationSmoothing = 15f;
@@ -20,23 +18,19 @@ namespace YesChef.Player
         private Vector3 currentVelocity;
         private float verticalVelocity;
 
-        private void Awake()
-        {
+        private void Awake() {
             characterController = GetComponent<CharacterController>();
             inputReader = GetComponent<PlayerInputReader>();
         }
 
-        private void Update()
-        {
+        private void Update() {
             Vector3 desiredMovement = new Vector3(inputReader.MoveInput.x, 0f, inputReader.MoveInput.y) * moveSpeed;
             currentVelocity = Vector3.Lerp(currentVelocity, desiredMovement, 1f - Mathf.Exp(-movementSmoothing * Time.deltaTime));
 
-            if (characterController.isGrounded && verticalVelocity < 0f)
-            {
+            if (characterController.isGrounded && verticalVelocity < 0f) {
                 verticalVelocity = -1f;
             }
-            else
-            {
+            else {
                 verticalVelocity -= gravity * Time.deltaTime;
             }
 
@@ -46,11 +40,9 @@ namespace YesChef.Player
             RotateTowardsMovementDirection(currentVelocity);
         }
 
-        private void RotateTowardsMovementDirection(Vector3 planarVelocity)
-        {
+        private void RotateTowardsMovementDirection(Vector3 planarVelocity) {
             Vector3 planarDirection = new(planarVelocity.x, 0f, planarVelocity.z);
-            if (planarDirection.sqrMagnitude <= 0.0001f)
-            {
+            if (planarDirection.sqrMagnitude <= 0.0001f) {
                 return;
             }
 

@@ -3,16 +3,13 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using YesChef.Player;
 
-namespace YesChef.Managers
-{
+namespace YesChef.Managers {
     /// <summary>
     /// Owns high-level game flow transitions and time scale changes.
     /// It coordinates the timer, score reset, and order reset in one predictable place.
     /// </summary>
-    public sealed class GameFlowManager : MonoBehaviour
-    {
-        public enum GameState
-        {
+    public sealed class GameFlowManager : MonoBehaviour {
+        public enum GameState {
             StartMenu,
             Playing,
             Paused,
@@ -32,47 +29,37 @@ namespace YesChef.Managers
         public event Action GameResumed;
         public event Action<int, bool> GameEnded;
 
-        private void Awake()
-        {
+        private void Awake() {
             ResolveDependencies();
             Time.timeScale = 1f;
         }
 
-        private void OnEnable()
-        {
-            if (gameTimer != null)
-            {
+        private void OnEnable() {
+            if (gameTimer != null) {
                 gameTimer.TimerCompleted += HandleTimerCompleted;
             }
         }
 
-        private void OnDisable()
-        {
-            if (gameTimer != null)
-            {
+        private void OnDisable() {
+            if (gameTimer != null) {
                 gameTimer.TimerCompleted -= HandleTimerCompleted;
             }
         }
 
-        private void Update()
-        {
-            if (playerInputReader == null || !playerInputReader.PausePressedThisFrame)
-            {
+        private void Update() {
+            if (playerInputReader == null || !playerInputReader.PausePressedThisFrame) {
                 return;
             }
 
-            if (CurrentState == GameState.Playing)
-            {
+            if (CurrentState == GameState.Playing) {
                 PauseGame();
             }
-            else if (CurrentState == GameState.Paused)
-            {
+            else if (CurrentState == GameState.Paused) {
                 ResumeGame();
             }
         }
 
-        public void StartGame()
-        {
+        public void StartGame() {
             ResolveDependencies();
 
             Time.timeScale = 1f;
@@ -84,10 +71,8 @@ namespace YesChef.Managers
             GameStarted?.Invoke();
         }
 
-        public void PauseGame()
-        {
-            if (CurrentState != GameState.Playing)
-            {
+        public void PauseGame() {
+            if (CurrentState != GameState.Playing) {
                 return;
             }
 
@@ -97,10 +82,8 @@ namespace YesChef.Managers
             Time.timeScale = 0f;
         }
 
-        public void ResumeGame()
-        {
-            if (CurrentState != GameState.Paused)
-            {
+        public void ResumeGame() {
+            if (CurrentState != GameState.Paused) {
                 return;
             }
 
@@ -110,60 +93,49 @@ namespace YesChef.Managers
             GameResumed?.Invoke();
         }
 
-        public void EndGame()
-        {
-            if (CurrentState == GameState.GameOver)
-            {
+        public void EndGame() {
+            if (CurrentState == GameState.GameOver) {
                 return;
             }
 
             gameTimer?.PauseTimer();
             SetState(GameState.GameOver);
-
+            if (scoreManager != null) scoreManager.SetHighScore();
             int finalScore = scoreManager != null ? scoreManager.CurrentScore : 0;
             bool newHighScore = scoreManager != null && scoreManager.HasBeatenHighScoreThisRun;
             GameEnded?.Invoke(finalScore, newHighScore);
             Time.timeScale = 0f;
         }
 
-        public void RestartGame()
-        {
+        public void RestartGame() {
             Time.timeScale = 1f;
             SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
         }
 
-        private void HandleTimerCompleted()
-        {
+        private void HandleTimerCompleted() {
             EndGame();
         }
 
-        private void ResolveDependencies()
-        {
-            if (gameTimer == null)
-            {
+        private void ResolveDependencies() {
+            if (gameTimer == null) {
                 gameTimer = GetComponentInChildren<GameTimer>(true);
             }
 
-            if (orderManager == null)
-            {
+            if (orderManager == null) {
                 orderManager = GetComponentInChildren<OrderManager>(true);
             }
 
-            if (scoreManager == null)
-            {
+            if (scoreManager == null) {
                 scoreManager = GetComponentInChildren<ScoreManager>(true);
             }
 
-            if (playerInputReader == null)
-            {
+            if (playerInputReader == null) {
                 playerInputReader = FindAnyObjectByType<PlayerInputReader>();
             }
         }
 
-        private void SetState(GameState newState)
-        {
-            if (CurrentState == newState)
-            {
+        private void SetState(GameState newState) {
+            if (CurrentState == newState) {
                 return;
             }
 

@@ -8,14 +8,12 @@ using YesChef.Managers;
 using YesChef.Player;
 using YesChef.UI;
 
-namespace YesChef.Orders
-{
+namespace YesChef.Orders {
     /// <summary>
     /// Customer-facing delivery window that owns one active order at a time.
     /// It exposes a contextual delivery action and renders icon-based order requirements.
     /// </summary>
-    public sealed class CustomerWindow : MonoBehaviour, IInteractable, IContextActionSource
-    {
+    public sealed class CustomerWindow : MonoBehaviour, IInteractable, IContextActionSource {
         private const float RespawnDelaySeconds = 5f;
 
         [Header("Optional UI")]
@@ -37,15 +35,12 @@ namespace YesChef.Orders
         public event Action<CustomerWindow> RespawnRequested;
         public event Action ContextActionsChanged;
 
-        public void Initialize(ScoreManager manager)
-        {
+        public void Initialize(ScoreManager manager) {
             scoreManager = manager;
         }
 
-        public void SetOrder(OrderData order)
-        {
-            if (respawnRoutine != null)
-            {
+        public void SetOrder(OrderData order) {
+            if (respawnRoutine != null) {
                 StopCoroutine(respawnRoutine);
                 respawnRoutine = null;
             }
@@ -55,45 +50,37 @@ namespace YesChef.Orders
             NotifyContextChanged();
         }
 
-        public void Interact(GameObject interactor)
-        {
+        public void Interact(GameObject interactor) {
             PlayerCarryController carryController = interactor != null ? interactor.GetComponent<PlayerCarryController>() : null;
             DeliverIngredient(carryController);
         }
 
-        public void GetContextActions(PlayerCarryController playerCarryController, System.Collections.Generic.List<ContextActionData> actions)
-        {
-            if (CurrentOrder == null || CurrentOrder.IsComplete || playerCarryController == null)
-            {
+        public void GetContextActions(PlayerCarryController playerCarryController, System.Collections.Generic.List<ContextActionData> actions) {
+            if (CurrentOrder == null || CurrentOrder.IsComplete || playerCarryController == null) {
                 return;
             }
 
             IngredientInstance heldItem = playerCarryController.PeekItem();
-            if (!CurrentOrder.CanAcceptIngredient(heldItem))
-            {
+            if (!CurrentOrder.CanAcceptIngredient(heldItem)) {
                 return;
             }
 
             actions.Add(new ContextActionData("Deliver Ingredient", true, () => DeliverIngredient(playerCarryController)));
         }
 
-        private void DeliverIngredient(PlayerCarryController carryController)
-        {
-            if (CurrentOrder == null || CurrentOrder.IsComplete || carryController == null)
-            {
+        private void DeliverIngredient(PlayerCarryController carryController) {
+            if (CurrentOrder == null || CurrentOrder.IsComplete || carryController == null) {
                 return;
             }
 
             IngredientInstance heldItem = carryController.PeekItem();
-            if (heldItem == null || !CurrentOrder.TryMatchIngredient(heldItem))
-            {
+            if (heldItem == null || !CurrentOrder.TryMatchIngredient(heldItem)) {
                 return;
             }
 
             carryController.DropItem();
 
-            if (CurrentOrder.IsComplete)
-            {
+            if (CurrentOrder.IsComplete) {
                 CompleteOrder();
                 return;
             }
@@ -102,10 +89,8 @@ namespace YesChef.Orders
             NotifyContextChanged();
         }
 
-        private void Update()
-        {
-            if (CurrentOrder == null || CurrentOrder.IsComplete)
-            {
+        private void Update() {
+            if (CurrentOrder == null || CurrentOrder.IsComplete) {
                 return;
             }
 
@@ -113,8 +98,7 @@ namespace YesChef.Orders
             UpdateTimerLabel();
         }
 
-        private void CompleteOrder()
-        {
+        private void CompleteOrder() {
             int score = CurrentOrder.CalculateScore();
             scoreManager?.AddScore(score);
             RefreshDisplay($"Complete ({score:+#;-#;0})");
@@ -122,8 +106,7 @@ namespace YesChef.Orders
             NotifyContextChanged();
         }
 
-        private IEnumerator RequestRespawnRoutine()
-        {
+        private IEnumerator RequestRespawnRoutine() {
             yield return new WaitForSeconds(RespawnDelaySeconds);
 
             CurrentOrder = null;
@@ -133,10 +116,8 @@ namespace YesChef.Orders
             RespawnRequested?.Invoke(this);
         }
 
-        private void RefreshDisplay(string status)
-        {
-            if (statusLabel != null)
-            {
+        private void RefreshDisplay(string status) {
+            if (statusLabel != null) {
                 statusLabel.text = status;
             }
 
@@ -144,10 +125,8 @@ namespace YesChef.Orders
             RefreshIngredientIcons();
         }
 
-        private void UpdateTimerLabel()
-        {
-            if (timerLabel == null)
-            {
+        private void UpdateTimerLabel() {
+            if (timerLabel == null) {
                 return;
             }
 
@@ -156,25 +135,20 @@ namespace YesChef.Orders
                 : $"Time: {CurrentOrder.OpenTime:0.0}s";
         }
 
-        private void RefreshIngredientIcons()
-        {
-            foreach (OrderIngredientIconView iconView in spawnedIcons)
-            {
-                if (iconView != null)
-                {
+        private void RefreshIngredientIcons() {
+            foreach (OrderIngredientIconView iconView in spawnedIcons) {
+                if (iconView != null) {
                     Destroy(iconView.gameObject);
                 }
             }
 
             spawnedIcons.Clear();
 
-            if (ingredientIconContainer == null || ingredientIconPrefab == null || CurrentOrder == null)
-            {
+            if (ingredientIconContainer == null || ingredientIconPrefab == null || CurrentOrder == null) {
                 return;
             }
 
-            for (int index = 0; index < CurrentOrder.RequiredIngredients.Count; index++)
-            {
+            for (int index = 0; index < CurrentOrder.RequiredIngredients.Count; index++) {
                 OrderData.RequiredIngredient requirement = CurrentOrder.RequiredIngredients[index];
                 OrderIngredientIconView iconView = Instantiate(ingredientIconPrefab, ingredientIconContainer);
                 iconView.Bind(requirement.IngredientData.Icon, requirement.RequiredState);
@@ -182,8 +156,7 @@ namespace YesChef.Orders
             }
         }
 
-        private void NotifyContextChanged()
-        {
+        private void NotifyContextChanged() {
             ContextActionsChanged?.Invoke();
         }
     }
