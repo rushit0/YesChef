@@ -1,49 +1,40 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 
-namespace YesChef.Player
-{
-    /// <summary>
-    /// Reads raw top-down chef input and exposes it as simple state for other components.
-    /// This keeps input collection separate from movement and interaction behaviour.
-    /// </summary>
-    public sealed class PlayerInputReader : MonoBehaviour
-    {
+namespace YesChef.Player {
+    public sealed class PlayerInputReader : MonoBehaviour {
         public Vector2 MoveInput { get; private set; }
         public bool InteractPressedThisFrame { get; private set; }
+        private InputSystem_Actions controls;
 
-        private void Update()
-        {
-            MoveInput = ReadMovementInput();
-            InteractPressedThisFrame = Input.GetKeyDown(KeyCode.E);
+        private void Awake() {
+            controls = new InputSystem_Actions();
         }
 
-        private static Vector2 ReadMovementInput()
-        {
-            float horizontal = 0f;
-            float vertical = 0f;
+        private void OnEnable() {
+            controls.Player.Enable();
+            controls.Player.Interact.performed += OnInteractPerformed;
+        }
 
-            if (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow))
-            {
-                horizontal -= 1f;
-            }
+        private void OnDisable() {
+            controls.Player.Interact.performed -= OnInteractPerformed;
+            controls.Player.Disable();
+        }
 
-            if (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow))
-            {
-                horizontal += 1f;
-            }
+        private void Update() {
+            MoveInput = controls.Player.Move.ReadValue<Vector2>();
+        }
 
-            if (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow))
-            {
-                vertical -= 1f;
-            }
+        private void LateUpdate() {
+            InteractPressedThisFrame = false;
+        }
 
-            if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow))
-            {
-                vertical += 1f;
-            }
+        private void OnInteractPerformed(InputAction.CallbackContext context) {
+            InteractPressedThisFrame = true;
+        }
 
-            Vector2 moveInput = new(horizontal, vertical);
-            return moveInput.sqrMagnitude > 1f ? moveInput.normalized : moveInput;
+        private void OnDestroy() {
+            controls.Dispose();
         }
     }
 }

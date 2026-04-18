@@ -24,10 +24,8 @@ namespace YesChef.Player
             inputReader = GetComponent<PlayerInputReader>();
         }
 
-        private void Update()
-        {
-            if (!inputReader.InteractPressedThisFrame)
-            {
+        private void Update() {
+            if (!inputReader.InteractPressedThisFrame) {
                 return;
             }
 
@@ -121,7 +119,7 @@ namespace YesChef.Player
 #if UNITY_EDITOR
         private void OnDrawGizmosSelected()
         {
-            Gizmos.color = new Color(1f, 0.65f, 0f, 0.6f);
+            Gizmos.color = new Color(1f, 0.65f, 1f, 1f);
             Gizmos.DrawWireSphere(transform.position, interactionRadius);
         }
 #endif
