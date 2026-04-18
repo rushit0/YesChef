@@ -4,62 +4,33 @@ using YesChef.Core.Interfaces;
 namespace YesChef.Player
 {
     /// <summary>
-    /// Finds the closest interactable in range and invokes it when the interact key is pressed.
-    /// Interaction selection is proximity-based, which is a good fit for top-down kitchen gameplay.
+    /// Finds the closest interactable in range and invokes it when the interact input is pressed.
+    /// It only handles interaction selection, leaving carry state to PlayerCarryController.
     /// </summary>
     [RequireComponent(typeof(PlayerInputReader))]
     public sealed class PlayerInteractionController : MonoBehaviour
     {
-        [SerializeField] private Transform holdPoint;
         [SerializeField, Min(0.1f)] private float interactionRadius = 1.5f;
         [SerializeField] private LayerMask interactionLayers = ~0;
 
         private readonly Collider[] overlapResults = new Collider[16];
 
         private PlayerInputReader inputReader;
-        private IHoldable heldItem;
 
         private void Awake()
         {
             inputReader = GetComponent<PlayerInputReader>();
         }
 
-        private void Update() {
-            if (!inputReader.InteractPressedThisFrame) {
+        private void Update()
+        {
+            if (!inputReader.InteractPressedThisFrame)
+            {
                 return;
             }
 
             IInteractable nearestInteractable = FindNearestInteractable();
             nearestInteractable?.Interact(gameObject);
-        }
-
-        public bool TryGetHeldItem(out IHoldable holdable)
-        {
-            holdable = heldItem;
-            return holdable != null;
-        }
-
-        public bool TryPickup(IHoldable holdable)
-        {
-            if (holdable == null || heldItem != null || holdPoint == null)
-            {
-                return false;
-            }
-
-            heldItem = holdable;
-            heldItem.OnPickedUp(holdPoint);
-            return true;
-        }
-
-        public void ReleaseHeldItem(Vector3 worldPosition)
-        {
-            if (heldItem == null)
-            {
-                return;
-            }
-
-            heldItem.OnDropped(worldPosition);
-            heldItem = null;
         }
 
         private IInteractable FindNearestInteractable()
@@ -119,7 +90,7 @@ namespace YesChef.Player
 #if UNITY_EDITOR
         private void OnDrawGizmosSelected()
         {
-            Gizmos.color = new Color(1f, 0.65f, 1f, 1f);
+            Gizmos.color = new Color(1f, 0.65f, 0f, 0.8f);
             Gizmos.DrawWireSphere(transform.position, interactionRadius);
         }
 #endif

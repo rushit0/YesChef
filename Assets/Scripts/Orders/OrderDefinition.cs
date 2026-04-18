@@ -14,13 +14,13 @@ namespace YesChef.Orders
     {
         [SerializeField] private string orderId = Guid.NewGuid().ToString("N");
         [SerializeField] private string displayName = "New Order";
-        [SerializeField] private List<IngredientDefinition> requiredIngredients = new();
+        [SerializeField] private List<IngredientData> requiredIngredients = new();
         [SerializeField, Min(1)] private int scoreValue = 100;
         [SerializeField, Min(1f)] private float timeLimitSeconds = 60f;
 
         public string OrderId => orderId;
         public string DisplayName => displayName;
-        public IReadOnlyList<IngredientDefinition> RequiredIngredients => requiredIngredients;
+        public IReadOnlyList<IngredientData> RequiredIngredients => requiredIngredients;
         public int ScoreValue => scoreValue;
         public float TimeLimitSeconds => timeLimitSeconds;
     }
