@@ -3,13 +3,11 @@ using TMPro;
 using UnityEngine;
 using YesChef.Core.Interfaces;
 
-namespace YesChef.UI
-{
+namespace YesChef.UI {
     /// <summary>
     /// Renders a contextual popup near the active station or window.
     /// </summary>
-    public sealed class ContextPopupUI : MonoBehaviour
-    {
+    public sealed class ContextPopupUI : MonoBehaviour {
         [SerializeField] private RectTransform panelRoot;
         [SerializeField] private TMP_Text titleLabel;
         [SerializeField] private RectTransform buttonContainer;
@@ -22,31 +20,25 @@ namespace YesChef.UI
         private Transform targetAnchor;
         private bool isVisible;
 
-        private void Awake()
-        {
+        private void Awake() {
             Hide();
         }
 
-        private void LateUpdate()
-        {
-            if (!isVisible || targetAnchor == null || panelRoot == null)
-            {
+        private void LateUpdate() {
+            if (!isVisible || targetAnchor == null || panelRoot == null) {
                 return;
             }
 
             Camera cameraToUse = worldCamera != null ? worldCamera : Camera.main;
-            if (cameraToUse == null)
-            {
+            if (cameraToUse == null) {
                 return;
             }
 
             transform.position = targetAnchor.position + panelOffset;
         }
 
-        public void Show(string title, IReadOnlyList<ContextActionData> actions, Transform popupAnchor)
-        {
-            if (panelRoot == null || buttonContainer == null || buttonPrefab == null)
-            {
+        public void Show(string title, IReadOnlyList<ContextActionData> actions, Transform popupAnchor) {
+            if (panelRoot == null || buttonContainer == null || buttonPrefab == null) {
                 return;
             }
 
@@ -54,19 +46,16 @@ namespace YesChef.UI
             isVisible = true;
             panelRoot.gameObject.SetActive(true);
 
-            if (titleLabel != null)
-            {
+            if (titleLabel != null) {
                 titleLabel.text = title;
             }
 
             EnsureButtonPool(actions.Count);
-            for (int index = 0; index < buttonPool.Count; index++)
-            {
+            for (int index = 0; index < buttonPool.Count; index++) {
                 bool shouldShow = index < actions.Count;
                 buttonPool[index].gameObject.SetActive(shouldShow);
 
-                if (!shouldShow)
-                {
+                if (!shouldShow) {
                     continue;
                 }
 
@@ -75,21 +64,17 @@ namespace YesChef.UI
             }
         }
 
-        public void Hide()
-        {
+        public void Hide() {
             isVisible = false;
             targetAnchor = null;
 
-            if (panelRoot != null)
-            {
+            if (panelRoot != null) {
                 panelRoot.gameObject.SetActive(false);
             }
         }
 
-        private void EnsureButtonPool(int requiredCount)
-        {
-            while (buttonPool.Count < requiredCount)
-            {
+        private void EnsureButtonPool(int requiredCount) {
+            while (buttonPool.Count < requiredCount) {
                 ContextActionButton buttonInstance = Instantiate(buttonPrefab, buttonContainer);
                 buttonPool.Add(buttonInstance);
             }

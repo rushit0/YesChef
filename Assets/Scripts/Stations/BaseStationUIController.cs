@@ -4,13 +4,11 @@ using UnityEngine;
 using YesChef.Core.Interfaces;
 using YesChef.Player;
 
-namespace YesChef.Stations
-{
+namespace YesChef.Stations {
     /// <summary>
     /// Base station class for stations that publish contextual popup actions.
     /// </summary>
-    public abstract class BaseStationUIController : StationBase, IContextActionSource
-    {
+    public abstract class BaseStationUIController : StationBase, IContextActionSource {
         private readonly List<ContextActionData> cachedActions = new();
 
         public abstract string PopupTitle { get; }
@@ -18,20 +16,16 @@ namespace YesChef.Stations
 
         public event Action ContextActionsChanged;
 
-        public sealed override void Interact(GameObject interactor)
-        {
-            if (!TryGetCarryController(interactor, out PlayerCarryController carryController))
-            {
+        public sealed override void Interact(GameObject interactor) {
+            if (!TryGetCarryController(interactor, out PlayerCarryController carryController)) {
                 return;
             }
 
             cachedActions.Clear();
             GetContextActions(carryController, cachedActions);
 
-            foreach (ContextActionData action in cachedActions)
-            {
-                if (!action.IsEnabled)
-                {
+            foreach (ContextActionData action in cachedActions) {
+                if (!action.IsEnabled) {
                     continue;
                 }
 
@@ -42,8 +36,7 @@ namespace YesChef.Stations
 
         public abstract void GetContextActions(PlayerCarryController playerCarryController, List<ContextActionData> actions);
 
-        protected void NotifyContextChanged()
-        {
+        protected void NotifyContextChanged() {
             ContextActionsChanged?.Invoke();
         }
     }

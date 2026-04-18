@@ -1,36 +1,30 @@
 using UnityEngine;
 using YesChef.Player;
 
-namespace YesChef.Ingredients
-{
+namespace YesChef.Ingredients {
     /// <summary>
     /// Handles the carried ingredient's spawned visual in the player's hand socket.
     /// Presentation stays here so the carry controller can remain a pure gameplay state holder.
     /// </summary>
     [RequireComponent(typeof(PlayerCarryController))]
-    public sealed class IngredientVisual : MonoBehaviour
-    {
+    public sealed class IngredientVisual : MonoBehaviour {
         [SerializeField] private Transform handSocket;
 
         private PlayerCarryController carryController;
         private IngredientInstance observedItem;
         private GameObject spawnedVisual;
 
-        private void Awake()
-        {
+        private void Awake() {
             carryController = GetComponent<PlayerCarryController>();
         }
 
-        private void OnEnable()
-        {
+        private void OnEnable() {
             carryController.CarriedItemChanged += HandleCarriedItemChanged;
             HandleCarriedItemChanged(carryController.PeekItem());
         }
 
-        private void OnDisable()
-        {
-            if (carryController != null)
-            {
+        private void OnDisable() {
+            if (carryController != null) {
                 carryController.CarriedItemChanged -= HandleCarriedItemChanged;
             }
 
@@ -38,44 +32,36 @@ namespace YesChef.Ingredients
             ClearVisual();
         }
 
-        private void HandleCarriedItemChanged(IngredientInstance item)
-        {
+        private void HandleCarriedItemChanged(IngredientInstance item) {
             ObserveItem(item);
             RefreshVisual();
         }
 
-        private void HandleObservedItemStateChanged(IngredientProcessState _)
-        {
+        private void HandleObservedItemStateChanged(IngredientProcessState _) {
             RefreshVisual();
         }
 
-        private void ObserveItem(IngredientInstance item)
-        {
-            if (observedItem != null)
-            {
+        private void ObserveItem(IngredientInstance item) {
+            if (observedItem != null) {
                 observedItem.StateChanged -= HandleObservedItemStateChanged;
             }
 
             observedItem = item;
 
-            if (observedItem != null)
-            {
+            if (observedItem != null) {
                 observedItem.StateChanged += HandleObservedItemStateChanged;
             }
         }
 
-        private void RefreshVisual()
-        {
+        private void RefreshVisual() {
             ClearVisual();
 
-            if (observedItem?.Data == null)
-            {
+            if (observedItem?.Data == null) {
                 return;
             }
 
             GameObject visualPrefab = observedItem.Data.GetPrefabForState(observedItem.State);
-            if (visualPrefab == null)
-            {
+            if (visualPrefab == null) {
                 return;
             }
 
@@ -85,10 +71,8 @@ namespace YesChef.Ingredients
             spawnedVisual.transform.localScale = Vector3.one;
         }
 
-        private void ClearVisual()
-        {
-            if (spawnedVisual == null)
-            {
+        private void ClearVisual() {
+            if (spawnedVisual == null) {
                 return;
             }
 

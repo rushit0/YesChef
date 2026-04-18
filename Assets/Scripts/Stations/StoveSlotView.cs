@@ -2,23 +2,19 @@ using UnityEngine;
 using YesChef.Ingredients;
 using YesChef.UI;
 
-namespace YesChef.Stations
-{
+namespace YesChef.Stations {
     /// <summary>
     /// Handles world visuals and timer rendering for one stove slot.
     /// </summary>
-    public sealed class StoveSlotView : MonoBehaviour
-    {
+    public sealed class StoveSlotView : MonoBehaviour {
         [SerializeField] private Transform itemAnchor;
         [SerializeField] private WorldTimerUI worldTimerUI;
 
         private GameObject spawnedVisual;
         private GameObject currentVisualPrefab;
 
-        public void Refresh(StoveSlot slot)
-        {
-            if (slot == null || slot.IsEmpty())
-            {
+        public void Refresh(StoveSlot slot) {
+            if (slot == null || slot.IsEmpty()) {
                 ClearVisual();
                 SetTimerVisible(false);
                 return;
@@ -26,29 +22,24 @@ namespace YesChef.Stations
 
             RefreshVisual(slot.Item);
 
-            if (slot.IsCooking)
-            {
+            if (slot.IsCooking) {
                 SetTimerVisible(true);
                 worldTimerUI?.SetTime(slot.RemainingCookTime);
             }
-            else
-            {
+            else {
                 SetTimerVisible(false);
             }
         }
 
-        private void RefreshVisual(IngredientInstance item)
-        {
+        private void RefreshVisual(IngredientInstance item) {
             GameObject targetPrefab = item?.Data?.GetPrefabForState(item.State);
-            if (targetPrefab == currentVisualPrefab && spawnedVisual != null)
-            {
+            if (targetPrefab == currentVisualPrefab && spawnedVisual != null) {
                 return;
             }
 
             ClearVisual();
 
-            if (targetPrefab == null)
-            {
+            if (targetPrefab == null) {
                 return;
             }
 
@@ -59,18 +50,14 @@ namespace YesChef.Stations
             currentVisualPrefab = targetPrefab;
         }
 
-        private void SetTimerVisible(bool isVisible)
-        {
-            if (worldTimerUI != null)
-            {
+        private void SetTimerVisible(bool isVisible) {
+            if (worldTimerUI != null) {
                 worldTimerUI.SetVisible(isVisible);
             }
         }
 
-        private void ClearVisual()
-        {
-            if (spawnedVisual != null)
-            {
+        private void ClearVisual() {
+            if (spawnedVisual != null) {
                 Object.Destroy(spawnedVisual);
                 spawnedVisual = null;
             }
