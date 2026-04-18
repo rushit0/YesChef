@@ -6,59 +6,130 @@ using YesChef.Orders;
 namespace YesChef.Managers
 {
     /// <summary>
-    /// Owns the runtime list of active kitchen orders.
-    /// Gameplay systems can depend on this focused manager instead of reaching into UI or scene objects.
+    /// Owns the active customer windows and keeps the kitchen supplied with runtime orders.
     /// </summary>
     public sealed class OrderManager : MonoBehaviour
     {
-        [SerializeField] private List<OrderDefinition> availableOrders = new();
+        [SerializeField] private OrderGenerator orderGenerator;
+        [SerializeField] private CustomerWindow[] customerWindows = new CustomerWindow[4];
 
-        private readonly List<OrderDefinition> activeOrders = new();
+        private readonly List<OrderData> activeOrders = new();
+        private bool initialized;
 
-        public IReadOnlyList<OrderDefinition> ActiveOrders => activeOrders;
+        public IReadOnlyList<OrderData> ActiveOrders => activeOrders;
 
-        public event Action<IReadOnlyList<OrderDefinition>> OrdersChanged;
+        public event Action<IReadOnlyList<OrderData>> OrdersChanged;
 
-        public void Initialize()
+        public void Initialize(ScoreManager scoreManager)
         {
-            activeOrders.Clear();
-            OrdersChanged?.Invoke(ActiveOrders);
+            ResolveDependencies();
+            UnsubscribeFromWindows();
+            SubscribeToWindows(scoreManager);
+            ResetOrders();
+            RefreshActiveOrders();
         }
 
-        public bool TryAddOrder(OrderDefinition orderDefinition)
+        private void ResolveDependencies()
         {
-            if (orderDefinition == null || activeOrders.Contains(orderDefinition))
+            if (orderGenerator == null)
             {
-                return false;
+                orderGenerator = GetComponentInChildren<OrderGenerator>(true);
             }
 
-            activeOrders.Add(orderDefinition);
-            OrdersChanged?.Invoke(ActiveOrders);
-            return true;
-        }
-
-        public bool TryAddFirstAvailableOrder()
-        {
-            foreach (OrderDefinition order in availableOrders)
+            bool hasAssignedWindows = false;
+            foreach (CustomerWindow customerWindow in customerWindows)
             {
-                if (TryAddOrder(order))
+                if (customerWindow != null)
                 {
-                    return true;
+                    hasAssignedWindows = true;
+                    break;
                 }
             }
 
-            return false;
+            if (!hasAssignedWindows)
+            {
+                CustomerWindow[] discoveredWindows = FindObjectsByType<CustomerWindow>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+                int windowCount = Mathf.Min(customerWindows.Length, discoveredWindows.Length);
+                for (int index = 0; index < windowCount; index++)
+                {
+                    customerWindows[index] = discoveredWindows[index];
+                }
+            }
         }
 
-        public bool CompleteOrder(OrderDefinition orderDefinition)
+        private void SubscribeToWindows(ScoreManager scoreManager)
         {
-            if (orderDefinition == null || !activeOrders.Remove(orderDefinition))
+            foreach (CustomerWindow customerWindow in customerWindows)
             {
-                return false;
+                if (customerWindow == null)
+                {
+                    continue;
+                }
+
+                customerWindow.Initialize(scoreManager);
+                customerWindow.RespawnRequested += HandleRespawnRequested;
+            }
+        }
+
+        private void UnsubscribeFromWindows()
+        {
+            foreach (CustomerWindow customerWindow in customerWindows)
+            {
+                if (customerWindow != null)
+                {
+                    customerWindow.RespawnRequested -= HandleRespawnRequested;
+                }
+            }
+        }
+
+        private void ResetOrders()
+        {
+            foreach (CustomerWindow customerWindow in customerWindows)
+            {
+                AssignNewOrder(customerWindow);
+            }
+
+            initialized = true;
+        }
+
+        private void HandleRespawnRequested(CustomerWindow customerWindow)
+        {
+            AssignNewOrder(customerWindow);
+            RefreshActiveOrders();
+        }
+
+        private void AssignNewOrder(CustomerWindow customerWindow)
+        {
+            if (customerWindow == null || orderGenerator == null)
+            {
+                return;
+            }
+
+            OrderData nextOrder = orderGenerator.GenerateRandomOrder();
+            if (nextOrder != null)
+            {
+                customerWindow.SetOrder(nextOrder);
+            }
+        }
+
+        private void RefreshActiveOrders()
+        {
+            activeOrders.Clear();
+
+            foreach (CustomerWindow customerWindow in customerWindows)
+            {
+                if (customerWindow?.CurrentOrder != null)
+                {
+                    activeOrders.Add(customerWindow.CurrentOrder);
+                }
             }
 
             OrdersChanged?.Invoke(ActiveOrders);
-            return true;
+        }
+
+        private void OnDisable()
+        {
+            UnsubscribeFromWindows();
         }
     }
 }
