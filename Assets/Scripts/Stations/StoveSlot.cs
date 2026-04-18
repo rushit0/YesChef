@@ -14,6 +14,7 @@ namespace YesChef.Stations
 
         public IngredientInstance Item { get; private set; }
         public float RemainingCookTime { get; private set; }
+        public float TotalCookTime => totalCookTime;
         public bool IsCooking => Item != null && RemainingCookTime > 0f;
         public bool IsReady => Item != null && RemainingCookTime <= 0f;
         public float ProgressNormalized => Item == null || totalCookTime <= 0f

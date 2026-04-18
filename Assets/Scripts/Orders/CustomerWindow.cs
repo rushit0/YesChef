@@ -1,35 +1,41 @@
 using System;
 using System.Collections;
-using System.Text;
 using TMPro;
 using UnityEngine;
 using YesChef.Core.Interfaces;
 using YesChef.Ingredients;
 using YesChef.Managers;
 using YesChef.Player;
+using YesChef.UI;
 
 namespace YesChef.Orders
 {
     /// <summary>
     /// Customer-facing delivery window that owns one active order at a time.
+    /// It exposes a contextual delivery action and renders icon-based order requirements.
     /// </summary>
-    public sealed class CustomerWindow : MonoBehaviour, IInteractable
+    public sealed class CustomerWindow : MonoBehaviour, IInteractable, IContextActionSource
     {
         private const float RespawnDelaySeconds = 5f;
 
         [Header("Optional UI")]
-        [SerializeField] private TMP_Text orderLabel;
+        [SerializeField] private Transform popupAnchor;
+        [SerializeField] private Transform ingredientIconContainer;
+        [SerializeField] private OrderIngredientIconView ingredientIconPrefab;
         [SerializeField] private TMP_Text timerLabel;
         [SerializeField] private TMP_Text statusLabel;
 
-        private readonly StringBuilder orderDescriptionBuilder = new();
+        private readonly System.Collections.Generic.List<OrderIngredientIconView> spawnedIcons = new();
 
         private ScoreManager scoreManager;
         private Coroutine respawnRoutine;
 
+        public string PopupTitle => "Customer Order";
+        public Transform PopupAnchor => popupAnchor != null ? popupAnchor : transform;
         public OrderData CurrentOrder { get; private set; }
 
         public event Action<CustomerWindow> RespawnRequested;
+        public event Action ContextActionsChanged;
 
         public void Initialize(ScoreManager manager)
         {
@@ -46,17 +52,39 @@ namespace YesChef.Orders
 
             CurrentOrder = order;
             RefreshDisplay("Waiting");
+            NotifyContextChanged();
         }
 
         public void Interact(GameObject interactor)
         {
-            if (CurrentOrder == null || CurrentOrder.IsComplete)
+            PlayerCarryController carryController = interactor != null ? interactor.GetComponent<PlayerCarryController>() : null;
+            DeliverIngredient(carryController);
+        }
+
+        public void GetContextActions(PlayerCarryController playerCarryController, System.Collections.Generic.List<ContextActionData> actions)
+        {
+            if (CurrentOrder == null || CurrentOrder.IsComplete || playerCarryController == null)
             {
                 return;
             }
 
-            PlayerCarryController carryController = interactor != null ? interactor.GetComponent<PlayerCarryController>() : null;
-            IngredientInstance heldItem = carryController?.PeekItem();
+            IngredientInstance heldItem = playerCarryController.PeekItem();
+            if (!CurrentOrder.CanAcceptIngredient(heldItem))
+            {
+                return;
+            }
+
+            actions.Add(new ContextActionData("Deliver Ingredient", true, () => DeliverIngredient(playerCarryController)));
+        }
+
+        private void DeliverIngredient(PlayerCarryController carryController)
+        {
+            if (CurrentOrder == null || CurrentOrder.IsComplete || carryController == null)
+            {
+                return;
+            }
+
+            IngredientInstance heldItem = carryController.PeekItem();
             if (heldItem == null || !CurrentOrder.TryMatchIngredient(heldItem))
             {
                 return;
@@ -71,6 +99,7 @@ namespace YesChef.Orders
             }
 
             RefreshDisplay("Delivered");
+            NotifyContextChanged();
         }
 
         private void Update()
@@ -90,6 +119,7 @@ namespace YesChef.Orders
             scoreManager?.AddScore(score);
             RefreshDisplay($"Complete ({score:+#;-#;0})");
             respawnRoutine = StartCoroutine(RequestRespawnRoutine());
+            NotifyContextChanged();
         }
 
         private IEnumerator RequestRespawnRoutine()
@@ -99,22 +129,19 @@ namespace YesChef.Orders
             CurrentOrder = null;
             respawnRoutine = null;
             RefreshDisplay("Next customer");
+            NotifyContextChanged();
             RespawnRequested?.Invoke(this);
         }
 
         private void RefreshDisplay(string status)
         {
-            if (orderLabel != null)
-            {
-                orderLabel.text = BuildOrderDescription();
-            }
-
             if (statusLabel != null)
             {
                 statusLabel.text = status;
             }
 
             UpdateTimerLabel();
+            RefreshIngredientIcons();
         }
 
         private void UpdateTimerLabel()
@@ -129,31 +156,35 @@ namespace YesChef.Orders
                 : $"Time: {CurrentOrder.OpenTime:0.0}s";
         }
 
-        private string BuildOrderDescription()
+        private void RefreshIngredientIcons()
         {
-            if (CurrentOrder == null)
+            foreach (OrderIngredientIconView iconView in spawnedIcons)
             {
-                return "No Order";
+                if (iconView != null)
+                {
+                    Destroy(iconView.gameObject);
+                }
             }
 
-            orderDescriptionBuilder.Clear();
+            spawnedIcons.Clear();
+
+            if (ingredientIconContainer == null || ingredientIconPrefab == null || CurrentOrder == null)
+            {
+                return;
+            }
 
             for (int index = 0; index < CurrentOrder.RequiredIngredients.Count; index++)
             {
-                if (index > 0)
-                {
-                    orderDescriptionBuilder.AppendLine();
-                }
-
                 OrderData.RequiredIngredient requirement = CurrentOrder.RequiredIngredients[index];
-                orderDescriptionBuilder.Append(requirement.Type);
-                if (requirement.RequiredState == IngredientProcessState.Prepared)
-                {
-                    orderDescriptionBuilder.Append(" (Prepared)");
-                }
+                OrderIngredientIconView iconView = Instantiate(ingredientIconPrefab, ingredientIconContainer);
+                iconView.Bind(requirement.IngredientData.Icon, requirement.RequiredState);
+                spawnedIcons.Add(iconView);
             }
+        }
 
-            return orderDescriptionBuilder.ToString();
+        private void NotifyContextChanged()
+        {
+            ContextActionsChanged?.Invoke();
         }
     }
 }

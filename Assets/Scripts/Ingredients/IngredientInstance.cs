@@ -6,7 +6,8 @@ namespace YesChef.Ingredients
     /// Plain runtime ingredient model carried by the player or owned by gameplay systems.
     /// It has no Unity scene dependency, which keeps business logic portable and easy to test.
     /// </summary>
-    public sealed class IngredientInstance
+    [Serializable]
+    public class IngredientInstance
     {
         public IngredientInstance(IngredientData data, IngredientProcessState initialState = IngredientProcessState.Raw)
         {

@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::YesChef.Ingredients.IngredientData
   ingredientName: Vegetable
   type: 0
+  icon: {fileID: 21300000, guid: 38e52b1297d00d142b20feca45de0fcb, type: 3}
   scoreValue: 20
   requiresProcessing: 1
   rawPrefab: {fileID: 3429729858779225369, guid: c3d1f2a85f2171d45b286b509a0266b5, type: 3}

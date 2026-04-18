@@ -81,6 +81,24 @@ namespace YesChef.Orders
             return false;
         }
 
+        public bool CanAcceptIngredient(IngredientInstance ingredient)
+        {
+            if (ingredient == null)
+            {
+                return false;
+            }
+
+            foreach (RequiredIngredient requirement in remainingIngredients)
+            {
+                if (requirement.Matches(ingredient))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         public int CalculateScore()
         {
             return totalIngredientValue - Mathf.FloorToInt(OpenTime);

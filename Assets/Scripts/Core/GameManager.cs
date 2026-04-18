@@ -34,8 +34,6 @@ namespace YesChef.Core
                 return;
             }
 
-            DontDestroyOnLoad(gameObject);
-
             BootstrapManagers();
             Bootstrapped?.Invoke();
         }

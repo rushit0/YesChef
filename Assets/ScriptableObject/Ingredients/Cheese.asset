@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::YesChef.Ingredients.IngredientData
   ingredientName: Cheese
   type: 1
+  icon: {fileID: 21300000, guid: b975c3a50caa92440be8ff8c933b4d84, type: 3}
   scoreValue: 10
   requiresProcessing: 0
   rawPrefab: {fileID: 7509510773319009103, guid: a0eedd3308fbbfb488a7951f0d935f4b, type: 3}

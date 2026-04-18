@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using YesChef.Player;
 
 namespace YesChef.Managers
 {
@@ -21,6 +22,7 @@ namespace YesChef.Managers
         [SerializeField] private GameTimer gameTimer;
         [SerializeField] private OrderManager orderManager;
         [SerializeField] private ScoreManager scoreManager;
+        [SerializeField] private PlayerInputReader playerInputReader;
 
         public GameState CurrentState { get; private set; } = GameState.StartMenu;
 
@@ -52,6 +54,23 @@ namespace YesChef.Managers
             }
         }
 
+        private void Update()
+        {
+            if (playerInputReader == null || !playerInputReader.PausePressedThisFrame)
+            {
+                return;
+            }
+
+            if (CurrentState == GameState.Playing)
+            {
+                PauseGame();
+            }
+            else if (CurrentState == GameState.Paused)
+            {
+                ResumeGame();
+            }
+        }
+
         public void StartGame()
         {
             ResolveDependencies();
@@ -72,10 +91,10 @@ namespace YesChef.Managers
                 return;
             }
 
-            Time.timeScale = 0f;
             gameTimer?.PauseTimer();
             SetState(GameState.Paused);
             GamePaused?.Invoke();
+            Time.timeScale = 0f;
         }
 
         public void ResumeGame()
@@ -98,13 +117,13 @@ namespace YesChef.Managers
                 return;
             }
 
-            Time.timeScale = 0f;
             gameTimer?.PauseTimer();
             SetState(GameState.GameOver);
 
             int finalScore = scoreManager != null ? scoreManager.CurrentScore : 0;
             bool newHighScore = scoreManager != null && scoreManager.HasBeatenHighScoreThisRun;
             GameEnded?.Invoke(finalScore, newHighScore);
+            Time.timeScale = 0f;
         }
 
         public void RestartGame()
@@ -133,6 +152,11 @@ namespace YesChef.Managers
             if (scoreManager == null)
             {
                 scoreManager = GetComponentInChildren<ScoreManager>(true);
+            }
+
+            if (playerInputReader == null)
+            {
+                playerInputReader = FindAnyObjectByType<PlayerInputReader>();
             }
         }
 

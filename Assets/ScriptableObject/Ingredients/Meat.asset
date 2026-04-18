@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::YesChef.Ingredients.IngredientData
   ingredientName: Meat
   type: 2
+  icon: {fileID: 21300000, guid: e7e2d84ef5548f344ab9db6a35475ddf, type: 3}
   scoreValue: 30
   requiresProcessing: 1
   rawPrefab: {fileID: 6527755756170589201, guid: 91f85cea10f192046a6c325b6f527aec, type: 3}

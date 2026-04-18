@@ -6,8 +6,8 @@ using YesChef.Player;
 namespace YesChef.Stations
 {
     /// <summary>
-    /// Common base for kitchen stations.
-    /// It centralizes player/carry lookup so concrete stations can focus on gameplay rules.
+    /// Common low-level base for kitchen stations.
+    /// It centralizes shared inventory helpers while leaving UI-specific behavior to higher layers.
     /// </summary>
     public abstract class StationBase : MonoBehaviour, IInteractable
     {

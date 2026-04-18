@@ -1,17 +1,21 @@
 using UnityEngine;
+using YesChef.Core.Interfaces;
 using YesChef.Ingredients;
 using YesChef.Player;
 
 namespace YesChef.Stations
 {
     /// <summary>
-    /// Cooks up to two raw meat ingredients independently and lets the player collect completed items.
+    /// Cooks up to two meats independently and exposes contextual place/pick actions.
     /// </summary>
-    public sealed class StoveStation : StationBase
+    public sealed class StoveStation : BaseStationUIController
     {
         private const float CookDurationSeconds = 6f;
 
-        [SerializeField] private StoveSlot[] slots = { new(), new() };
+        private StoveSlot[] slots = { new(), new() };
+        [SerializeField] private StoveSlotView[] slotViews = new StoveSlotView[2];
+
+        public override string PopupTitle => "Stove";
 
         private void Reset()
         {
@@ -35,24 +39,49 @@ namespace YesChef.Stations
                     continue;
                 }
 
+                bool wasCooking = slot.IsCooking;
                 slot.Tick(Time.deltaTime);
-                if (slot.IsReady)
+                if (wasCooking && slot.IsReady)
                 {
                     slot.Item.SetState(IngredientProcessState.Prepared);
+                    NotifyContextChanged();
                 }
             }
+
+            RefreshViews();
         }
 
-        public override void Interact(GameObject interactor)
+        private void OnDisable()
         {
-            if (!TryGetCarryController(interactor, out PlayerCarryController carryController))
+            RefreshViews();
+        }
+
+        public override void GetContextActions(PlayerCarryController playerCarryController, System.Collections.Generic.List<ContextActionData> actions)
+        {
+            if (playerCarryController == null)
             {
                 return;
             }
 
-            if (!carryController.HasItem())
+            if (CanPlaceRawMeat(playerCarryController))
             {
-                TryCollectCookedItem(carryController);
+                StoveSlot emptySlot = FindEmptySlot();
+                if (emptySlot != null)
+                {
+                    actions.Add(new ContextActionData("Place Meat", true, () => PlaceRawMeat(playerCarryController, emptySlot)));
+                }
+            }
+
+            if (CanPickupCookedMeat(playerCarryController))
+            {
+                actions.Add(new ContextActionData("Pick Cooked Meat", true, () => TryCollectCookedItem(playerCarryController)));
+            }
+        }
+
+        private void PlaceRawMeat(PlayerCarryController carryController, StoveSlot targetSlot)
+        {
+            if (carryController == null || targetSlot == null || !targetSlot.IsEmpty())
+            {
                 return;
             }
 
@@ -62,13 +91,9 @@ namespace YesChef.Stations
                 return;
             }
 
-            StoveSlot emptySlot = FindEmptySlot();
-            if (emptySlot == null)
-            {
-                return;
-            }
-
-            emptySlot.Assign(TakeHeldItem(carryController), CookDurationSeconds);
+            targetSlot.Assign(TakeHeldItem(carryController), CookDurationSeconds);
+            NotifyContextChanged();
+            RefreshViews();
         }
 
         private void TryCollectCookedItem(PlayerCarryController carryController)
@@ -83,7 +108,11 @@ namespace YesChef.Stations
             if (!TryGiveItem(carryController, cookedItem))
             {
                 readySlot.Assign(cookedItem, 0f);
+                return;
             }
+
+            NotifyContextChanged();
+            RefreshViews();
         }
 
         private StoveSlot FindEmptySlot()
@@ -110,6 +139,51 @@ namespace YesChef.Stations
             }
 
             return null;
+        }
+
+        private bool HasEmptySlot()
+        {
+            return FindEmptySlot() != null;
+        }
+
+        private bool HasReadySlot()
+        {
+            return FindReadySlot() != null;
+        }
+
+        private bool CanPlaceRawMeat(PlayerCarryController playerCarryController)
+        {
+            if (playerCarryController == null || !HasEmptySlot())
+            {
+                return false;
+            }
+
+            IngredientInstance heldItem = PeekHeldItem(playerCarryController);
+            return IsIngredient(heldItem, IngredientType.Meat, IngredientProcessState.Raw);
+        }
+
+        private bool CanPickupCookedMeat(PlayerCarryController playerCarryController)
+        {
+            return playerCarryController != null && !playerCarryController.HasItem() && HasReadySlot();
+        }
+
+        private void RefreshViews()
+        {
+            if (slotViews == null)
+            {
+                return;
+            }
+
+            for (int index = 0; index < slotViews.Length; index++)
+            {
+                if (slotViews[index] == null)
+                {
+                    continue;
+                }
+
+                StoveSlot slot = index < slots.Length ? slots[index] : null;
+                slotViews[index].Refresh(slot);
+            }
         }
     }
 }

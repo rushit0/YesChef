@@ -11,15 +11,27 @@ namespace YesChef.UI
     /// </summary>
     public sealed class GameOverPanel : MonoBehaviour
     {
+        [SerializeField] private CanvasGroup canvasGroup;
         [SerializeField] private TMP_Text finalScoreLabel;
         [SerializeField] private TMP_Text newHighScoreLabel;
         [SerializeField] private Button restartButton;
+        [SerializeField] private Button quitButton;
+
+        private void Awake()
+        {
+            canvasGroup ??= GetComponent<CanvasGroup>();
+        }
 
         private void OnEnable()
         {
             if (restartButton != null)
             {
                 restartButton.onClick.AddListener(HandleRestartClicked);
+            }
+
+            if (quitButton != null)
+            {
+                quitButton.onClick.AddListener(HandleQuitClicked);
             }
 
             if (GameManager.Instance != null)
@@ -35,6 +47,11 @@ namespace YesChef.UI
             if (restartButton != null)
             {
                 restartButton.onClick.RemoveListener(HandleRestartClicked);
+            }
+
+            if (quitButton != null)
+            {
+                quitButton.onClick.RemoveListener(HandleQuitClicked);
             }
 
             if (GameManager.Instance != null)
@@ -63,9 +80,26 @@ namespace YesChef.UI
             GameManager.Instance?.GameFlowManager.RestartGame();
         }
 
+        private void HandleQuitClicked()
+        {
+            Application.Quit();
+        }
+
         private void HandleStateChanged(GameFlowManager.GameState state)
         {
-            gameObject.SetActive(state == GameFlowManager.GameState.GameOver);
+            SetVisible(state == GameFlowManager.GameState.GameOver);
+        }
+
+        private void SetVisible(bool isVisible)
+        {
+            if (canvasGroup == null)
+            {
+                return;
+            }
+
+            canvasGroup.alpha = isVisible ? 1f : 0f;
+            canvasGroup.interactable = isVisible;
+            canvasGroup.blocksRaycasts = isVisible;
         }
     }
 }

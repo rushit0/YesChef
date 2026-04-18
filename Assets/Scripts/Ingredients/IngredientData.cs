@@ -11,6 +11,7 @@ namespace YesChef.Ingredients
     {
         [SerializeField] private string ingredientName = "Ingredient";
         [SerializeField] private IngredientType type = IngredientType.Vegetable;
+        [SerializeField] private Sprite icon;
         [SerializeField, Min(0)] private int scoreValue = 10;
         [SerializeField] private bool requiresProcessing;
         [SerializeField] private GameObject rawPrefab;
@@ -18,6 +19,7 @@ namespace YesChef.Ingredients
 
         public string IngredientName => ingredientName;
         public IngredientType Type => type;
+        public Sprite Icon => icon;
         public int ScoreValue => scoreValue;
         public bool RequiresProcessing => requiresProcessing;
         public GameObject RawPrefab => rawPrefab;

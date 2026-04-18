@@ -1,78 +1,100 @@
-using System.Collections;
 using UnityEngine;
+using YesChef.Core.Interfaces;
 using YesChef.Ingredients;
 using YesChef.Player;
+using YesChef.UI;
 
 namespace YesChef.Stations
 {
     /// <summary>
-    /// Prepares raw vegetables and returns the prepared ingredient to the player when possible.
+    /// Prepares one vegetable at a time and exposes contextual place/pick actions.
     /// </summary>
-    public sealed class TableStation : StationBase
+    public sealed class TableStation : BaseStationUIController
     {
         private const float PrepareDurationSeconds = 2f;
 
-        private IngredientInstance preparedItem;
-        private PlayerCarryController processingPlayer;
-        private Coroutine processingRoutine;
+        [SerializeField] private Transform itemAnchor;
+        [SerializeField] private WorldTimerUI worldTimerUI;
 
-        public bool IsProcessing => processingRoutine != null;
+        private IngredientInstance preparedItem;
+        private float remainingPrepareTime;
+        private GameObject spawnedVisual;
+        private GameObject currentVisualPrefab;
+
+        public override string PopupTitle => "Prep Table";
+        public bool IsProcessing => preparedItem != null && remainingPrepareTime > 0f;
+
+        private void Update()
+        {
+            if (!IsProcessing)
+            {
+                UpdateTimerUI();
+                return;
+            }
+
+            remainingPrepareTime = Mathf.Max(0f, remainingPrepareTime - Time.deltaTime);
+            if (remainingPrepareTime <= 0f && preparedItem != null)
+            {
+                preparedItem.SetState(IngredientProcessState.Prepared);
+                RefreshVisual();
+                NotifyContextChanged();
+            }
+
+            UpdateTimerUI();
+        }
 
         private void OnDisable()
         {
-            if (processingRoutine != null)
-            {
-                StopCoroutine(processingRoutine);
-                processingRoutine = null;
-            }
+            ClearVisual();
+            UpdateTimerUI();
         }
 
-        public override void Interact(GameObject interactor)
+        public override void GetContextActions(PlayerCarryController playerCarryController, System.Collections.Generic.List<ContextActionData> actions)
         {
-            if (!TryGetCarryController(interactor, out PlayerCarryController carryController))
+            if (preparedItem != null && !IsProcessing)
+            {
+                bool canPickUp = playerCarryController != null && !playerCarryController.HasItem();
+                actions.Add(new ContextActionData("Pick Vegetable", canPickUp, () => PickPreparedVegetable(playerCarryController)));
+                return;
+            }
+
+            if (preparedItem != null || playerCarryController == null)
             {
                 return;
             }
 
-            if (preparedItem != null)
-            {
-                TryServePreparedItem(carryController);
-                return;
-            }
-
-            if (IsProcessing)
-            {
-                return;
-            }
-
-            IngredientInstance heldItem = PeekHeldItem(carryController);
+            IngredientInstance heldItem = PeekHeldItem(playerCarryController);
             if (!IsIngredient(heldItem, IngredientType.Vegetable, IngredientProcessState.Raw))
             {
                 return;
             }
 
-            preparedItem = TakeHeldItem(carryController);
-            processingPlayer = carryController;
-            processingRoutine = StartCoroutine(ProcessVegetableRoutine());
+            actions.Add(new ContextActionData("Place Vegetable", true, () => StartPreparingVegetable(playerCarryController)));
         }
 
-        private IEnumerator ProcessVegetableRoutine()
+        private void StartPreparingVegetable(PlayerCarryController playerCarryController)
         {
-            yield return new WaitForSeconds(PrepareDurationSeconds);
-
-            if (preparedItem != null)
+            if (preparedItem != null || playerCarryController == null)
             {
-                preparedItem.SetState(IngredientProcessState.Prepared);
-                TryServePreparedItem(processingPlayer);
+                return;
             }
 
-            processingPlayer = null;
-            processingRoutine = null;
+            IngredientInstance heldItem = PeekHeldItem(playerCarryController);
+            if (!IsIngredient(heldItem, IngredientType.Vegetable, IngredientProcessState.Raw))
+            {
+                return;
+            }
+
+            preparedItem = TakeHeldItem(playerCarryController);
+            remainingPrepareTime = PrepareDurationSeconds;
+            RefreshVisual();
+            UpdateTimerUI();
+            NotifyContextChanged();
         }
 
-        private void TryServePreparedItem(PlayerCarryController carryController)
+        private void PickPreparedVegetable(PlayerCarryController carryController)
         {
-            if (preparedItem == null || carryController == null)
+            if (preparedItem == null || IsProcessing || carryController == null || carryController.HasItem())
             {
                 return;
             }
@@ -83,6 +105,58 @@ namespace YesChef.Stations
             }
 
             preparedItem = null;
+            remainingPrepareTime = 0f;
+            ClearVisual();
+            UpdateTimerUI();
+            NotifyContextChanged();
+        }
+
+        private void RefreshVisual()
+        {
+            GameObject targetPrefab = preparedItem?.Data?.GetPrefabForState(preparedItem.State);
+            if (targetPrefab == currentVisualPrefab && spawnedVisual != null)
+            {
+                return;
+            }
+
+            ClearVisual();
+
+            if (targetPrefab == null)
+            {
+                return;
+            }
+
+            Transform anchor = itemAnchor != null ? itemAnchor : transform;
+            spawnedVisual = Instantiate(targetPrefab, anchor);
+            spawnedVisual.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
+            spawnedVisual.transform.localScale = Vector3.one;
+            currentVisualPrefab = targetPrefab;
+        }
+
+        private void ClearVisual()
+        {
+            if (spawnedVisual != null)
+            {
+                Destroy(spawnedVisual);
+                spawnedVisual = null;
+            }
+
+            currentVisualPrefab = null;
+        }
+
+        private void UpdateTimerUI()
+        {
+            if (worldTimerUI == null)
+            {
+                return;
+            }
+
+            bool showTimer = IsProcessing;
+            worldTimerUI.SetVisible(showTimer);
+            if (showTimer)
+            {
+                worldTimerUI.SetTime(remainingPrepareTime);
+            }
         }
     }
 }
